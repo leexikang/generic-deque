@@ -5,8 +5,8 @@ package deque
 const minCapacity = 16
 
 // Deque represents a single instance of the deque data structure.
-type Deque struct {
-	buf    []interface{}
+type Deque[T any] struct {
+	buf    []T
 	head   int
 	tail   int
 	count  int

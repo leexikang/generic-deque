@@ -6,7 +6,7 @@ const minCapacity = 16
 
 // Deque represents a single instance of the deque data structure.
 type Deque[T any] struct {
-	buf    []*T
+	buf    []T
 	head   int
 	tail   int
 	count  int
@@ -39,13 +39,13 @@ func New[T any](size ...int) *Deque[T] {
 		minCap <<= 1
 	}
 
-	var buf []*T
+	var buf []T
 	if capacity != 0 {
 		bufSize := minCap
 		for bufSize < capacity {
 			bufSize <<= 1
 		}
-		buf = make([]*T, bufSize)
+		buf = make([]T, bufSize)
 	}
 
 	return &Deque[T]{
@@ -77,7 +77,7 @@ func (q *Deque[T]) Len() int {
 func (q *Deque[T]) PushBack(elem T) {
 	q.growIfFull()
 
-	q.buf[q.tail] = &elem
+	q.buf[q.tail] = elem
 	// Calculate new tail position.
 	q.tail = q.next(q.tail)
 	q.count++
@@ -89,7 +89,7 @@ func (q *Deque[T]) PushFront(elem T) {
 
 	// Calculate new head position.
 	q.head = q.prev(q.head)
-	q.buf[q.head] = &elem
+	q.buf[q.head] = elem
 	q.count++
 }
 
@@ -101,13 +101,13 @@ func (q *Deque[T]) PopFront() T {
 		panic("deque: PopFront() called on empty queue")
 	}
 	ret := q.buf[q.head]
-	q.buf[q.head] = nil
+	q.buf[q.head] = *new(T)
 	// Calculate new head position.
 	q.head = q.next(q.head)
 	q.count--
 
 	q.shrinkIfExcess()
-	return *ret
+	return ret
 }
 
 // PopBack removes and returns the element from the back of the queue.
@@ -123,11 +123,11 @@ func (q *Deque[T]) PopBack() T {
 
 	// Remove value at tail.
 	ret := q.buf[q.tail]
-	q.buf[q.tail] = nil
+	q.buf[q.tail] = *new(T)
 	q.count--
 
 	q.shrinkIfExcess()
-	return *ret
+	return ret
 }
 
 // Front returns the element at the front of the queue.  This is the element
@@ -137,7 +137,7 @@ func (q *Deque[T]) Front() T {
 	if q.count <= 0 {
 		panic("deque: Front() called when empty")
 	}
-	return *q.buf[q.head]
+	return q.buf[q.head]
 }
 
 // Back returns the element at the back of the queue.  This is the element
@@ -147,7 +147,7 @@ func (q *Deque[T]) Back() T {
 	if q.count <= 0 {
 		panic("deque: Back() called when empty")
 	}
-	return *q.buf[q.prev(q.tail)]
+	return q.buf[q.prev(q.tail)]
 }
 
 // At returns the element at index i in the queue without removing the element
@@ -167,7 +167,7 @@ func (q *Deque[T]) At(i int) T {
 		panic("deque: At() called with index out of range")
 	}
 	// bitwise modulus
-	return *q.buf[(q.head+i)&(len(q.buf)-1)]
+	return q.buf[(q.head+i)&(len(q.buf)-1)]
 }
 
 // Set puts the element at index i in the queue. Set shares the same purpose
@@ -178,7 +178,7 @@ func (q *Deque[T]) Set(i int, elem T) {
 		panic("deque: Set() called with index out of range")
 	}
 	// bitwise modulus
-	q.buf[(q.head+i)&(len(q.buf)-1)] = &elem
+	q.buf[(q.head+i)&(len(q.buf)-1)] = elem
 }
 
 // Clear removes all elements from the queue, but retains the current capacity.
@@ -190,7 +190,7 @@ func (q *Deque[T]) Clear() {
 	// bitwise modulus
 	modBits := len(q.buf) - 1
 	for h := q.head; h != q.tail; h = (h + 1) & modBits {
-		q.buf[h] = nil
+		q.buf[h] = *new(T)
 	}
 	q.head = 0
 	q.tail = 0
@@ -228,7 +228,7 @@ func (q *Deque[T]) Rotate(n int) {
 			q.tail = (q.tail - 1) & modBits
 			// Put tail value at head and remove value at tail.
 			q.buf[q.head] = q.buf[q.tail]
-			q.buf[q.tail] = nil
+			q.buf[q.tail] = *new(T)
 		}
 		return
 	}
@@ -237,7 +237,7 @@ func (q *Deque[T]) Rotate(n int) {
 	for ; n > 0; n-- {
 		// Put head value at tail and remove value at head.
 		q.buf[q.tail] = q.buf[q.head]
-		q.buf[q.head] = nil
+		q.buf[q.head] = *new(T)
 		// Calculate new head and tail using bitwise modulus.
 		q.head = (q.head + 1) & modBits
 		q.tail = (q.tail + 1) & modBits
@@ -251,7 +251,7 @@ func (q *Deque[T]) Index(f func(T) bool) int {
 	if q.Len() > 0 {
 		modBits := len(q.buf) - 1
 		for i := 0; i < q.count; i++ {
-			if f(*q.buf[(q.head+i)&modBits]) {
+			if f(q.buf[(q.head+i)&modBits]) {
 				return i
 			}
 		}
@@ -358,7 +358,7 @@ func (q *Deque[T]) growIfFull() {
 		if q.minCap == 0 {
 			q.minCap = minCapacity
 		}
-		q.buf = make([]*T, q.minCap)
+		q.buf = make([]T, q.minCap)
 		return
 	}
 	q.resize()
@@ -375,7 +375,7 @@ func (q *Deque[T]) shrinkIfExcess() {
 // used to grow the queue when it is full, and also to shrink it when it is
 // only a quarter full.
 func (q *Deque[T]) resize() {
-	newBuf := make([]*T, q.count<<1)
+	newBuf := make([]T, q.count<<1)
 	if q.tail > q.head {
 		copy(newBuf, q.buf[q.head:q.tail])
 	} else {

@@ -384,7 +384,7 @@ func TestClear(t *testing.T) {
 
 	// Check that there are no remaining references after Clear()
 	for i := 0; i < len(q.buf); i++ {
-		if q.buf[i] != nil {
+		if q.buf[i] != 0 {
 			t.Error("queue has non-nil deleted elements after Clear()")
 			break
 		}
@@ -502,7 +502,7 @@ func TestInsert(t *testing.T) {
 	// deque: b 8 9 y 10 11 12 13 14 15 16 17 x 18 19 e
 	// buffer: [16,17,x,18,19,e,b,8,9,y,10,11,12,13,14,15]
 	for i, x := range []string{"16", "17", "x", "18", "19", "e", "b", "8", "9", "y", "10", "11", "12", "13", "14", "15"} {
-		if *s.buf[i] != x {
+		if s.buf[i] != x {
 			t.Error("expected", x, "at buffer position", i)
 		}
 	}
